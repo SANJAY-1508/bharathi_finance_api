@@ -17,13 +17,24 @@ $timestamp = date('Y-m-d H:i:s');
 // SEARCH BLOCK 
 if (isset($obj->search_text)) {
     $search_text = $conn->real_escape_string($obj->search_text);
-    $sql = "SELECT * FROM `members` 
-            WHERE `name` LIKE '%$search_text%' 
-            OR `member_no` LIKE '%$search_text%' 
-            OR `father_name` LIKE '%$search_text%' 
-            OR `phone` LIKE '%$search_text%'
-            ORDER BY `id` DESC";
+
+    $search_terms = explode(' ', $search_text);
+    $where_conditions = [];
     
+    foreach ($search_terms as $term) {
+        if (!empty($term)) {
+            $term = trim($term);
+            $where_conditions[] = "(`name` LIKE '%$term%' OR `member_no` LIKE '%$term%' OR `father_name` LIKE '%$term%' OR `phone` LIKE '%$term%' OR `section_no` LIKE '%$term%' OR `house` LIKE '%$term%' OR `jamin_name` LIKE '%$term%' )";
+  
+        }
+    }
+    
+    $sql = "SELECT id,name,member_no,father_name,section_no,house,jamin_name FROM `members`";
+    if (!empty($where_conditions)) {
+        $sql .= " WHERE " . implode(' AND ', $where_conditions);
+    }
+    
+    $sql .= " ORDER BY `id` DESC";
     $result = $conn->query($sql);
     $output["head"]["code"] = 200;
     $output["head"]["msg"] = "Success";
