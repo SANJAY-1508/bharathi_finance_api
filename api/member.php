@@ -29,7 +29,7 @@ if (isset($obj->search_text)) {
         }
     }
     
-    $sql = "SELECT id,member_id,name,member_no,father_name,section_no,house,jamin_name FROM `members`";
+    $sql = "SELECT id,member_id,name,member_no,father_name,section_no,house,jamin_name FROM `members` WHERE `delete_at` = 0";
     if (!empty($where_conditions)) {
         $sql .= " WHERE " . implode(' AND ', $where_conditions);
     }
@@ -70,6 +70,7 @@ else if (isset($obj->member_no) && !isset($obj->edit_member_id)) {
     if ($check->num_rows > 0) {
         $output["head"]["code"] = 400;
         $output["head"]["msg"] = "Member number already exists!";
+        $check = $conn->query("SELECT id FROM members WHERE member_no = '$member_no' AND delete_at = 0");
         echo json_encode($output, JSON_NUMERIC_CHECK);
         exit;
     }
@@ -105,17 +106,23 @@ else if (isset($obj->member_no) && !isset($obj->edit_member_id)) {
 
 
 // <<<<<<<<<<===================== This is to Delete the member =====================>>>>>>>>>>
+
 else if (isset($obj->delete_member_id)) {
-    $delete_member_id = $obj->delete_member_id;
+    $delete_member_id = $conn->real_escape_string($obj->delete_member_id);
     
     if (!empty($delete_member_id)) {
-        $deleteMember = "DELETE FROM `members` WHERE `id`='$delete_member_id'";
+        $softDeleteMember = "UPDATE `members` SET `delete_at` = 1 WHERE `id`='$delete_member_id'";
         
-        if ($conn->query($deleteMember)) {
-            $output["head"]["code"] = 200;
-            $output["head"]["msg"] = "Member Deleted Successfully!";
+        if ($conn->query($softDeleteMember)) {
+            if ($conn->affected_rows > 0) {
+                $output["head"]["code"] = 200;
+                $output["head"]["msg"] = "Member Deleted Successfully!";
+            } else {
+                $output["head"]["code"] = 404;
+                $output["head"]["msg"] = "Member not found.";
+            }
         } else {
-            $output["head"]["code"] = 400;
+            $output["head"]["code"] = 500;
             $output["head"]["msg"] = "Failed to delete member. Please try again.";
         }
     } else {
@@ -123,6 +130,5 @@ else if (isset($obj->delete_member_id)) {
         $output["head"]["msg"] = "Please provide member ID to delete.";
     }
 }
-
 echo json_encode($output, JSON_NUMERIC_CHECK);
 ?>
