@@ -29,7 +29,7 @@ if (isset($obj->search_text)) {
         }
     }
     
-    $sql = "SELECT id,name,member_no,father_name,section_no,house,jamin_name FROM `members`";
+    $sql = "SELECT id,member_id,name,member_no,father_name,section_no,house,jamin_name FROM `members`";
     if (!empty($where_conditions)) {
         $sql .= " WHERE " . implode(' AND ', $where_conditions);
     }
@@ -87,10 +87,15 @@ else if (isset($obj->member_no) && !isset($obj->edit_member_id)) {
     
     if ($conn->query($createMember)) {
         $id = $conn->insert_id;
+        // GENERATE UNIQUE ID using the new member's ID
+        $unique_member_id = uniqueID("MEMBER", $id);
+        $updateUniqueId = "UPDATE members SET member_id = '$unique_member_id' WHERE id = '$id'";
+        $conn->query($updateUniqueId);
         $output["head"]["code"] = 200;
         $output["head"]["msg"] = "Successfully member Created";
         $output["body"]["member_no"] = $member_no;
         $output["body"]["id"] = $id;
+         $output["body"]["member_id"] = $unique_member_id;
     } else {
         $output["head"]["code"] = 400;
         $output["head"]["msg"] = "Failed to create member. Please try again.";
